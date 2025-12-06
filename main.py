@@ -16,9 +16,14 @@ from auth import get_current_user, create_token, hash_pwd, verify_pwd, SECRET, A
 
 app = FastAPI(title="PoliMarket")
 
+origins = [
+    "http://localhost:5173", #Local development
+    "https://polimarket.vercel.app" # Production
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

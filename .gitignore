@@ -1,0 +1,54 @@
+# ======================
+# Python
+# ======================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dll
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# ======================
+# FastAPI / Uvicorn
+# ======================
+# Uvicorn / Gunicorn logs
+*.log
+
+# ======================
+# VSCode
+# ======================
+.vscode/
+*.code-workspace
+
+# ======================
+# OS / Tools
+# ======================
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+.cache/
+*.swp
+*.swo
+
+# ======================
+# Databases and

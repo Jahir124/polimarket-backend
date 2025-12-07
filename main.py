@@ -18,7 +18,7 @@ app = FastAPI(title="PoliMarket")
 
 origins = [
     "http://localhost:5173", #Local development
-    "https://polimarket.vercel.app" # Production
+    "https://polimarket-kappa.vercel.app/" # Production
 ]
 
 app.add_middleware(

@@ -18,7 +18,7 @@ app = FastAPI(title="PoliMarket")
 
 origins = [
     "http://localhost:5173", #Local development
-    "https://polimarket-kappa.vercel.app/" # Production
+    "https://polimarket-kappa.vercel.app" # Production
 ]
 
 app.add_middleware(
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "https://api-polimarket.onrender.com"
 os.makedirs("static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

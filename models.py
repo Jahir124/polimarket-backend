@@ -18,7 +18,7 @@ class Product(SQLModel, table=True):
     title: str
     description: str
     price: float
-    image_url: str  # <-- CAMBIO AÑADIDO
+    image_url: str 
     seller_id: int = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

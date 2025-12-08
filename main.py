@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_URL = "https://api-polimarket.onrender.com"
+BASE_URL = "https://api-polimarket.onrender.com" # BASE_URL = "http://127.0.0.1:8000" for development
 os.makedirs("static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

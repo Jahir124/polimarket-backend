@@ -16,7 +16,7 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     password_hash: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
+    is_delivery: bool = Field(default=False)
     products: list["Product"] = Relationship(back_populates="seller")
     favorites: list["Product"] = Relationship(link_model=Favorite)
 

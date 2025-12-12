@@ -7,10 +7,11 @@ from sqlmodel import Session, select
 from db import get_session
 from models import User
 
-
+import os
 SECRET = "CHANGE_ME" # cámbialo en producción
 ALGO = "HS256"
 ACCESS_MINUTES = 60 * 24
+DELIVERY_JOIN_SECRET="clod"
 
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/auth/login")

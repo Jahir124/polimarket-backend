@@ -15,6 +15,7 @@ class User(SQLModel, table=True):
     name: str
     email: str = Field(index=True, unique=True)
     password_hash: str
+    profile_image: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_delivery: bool = Field(default=False)
     products: list["Product"] = Relationship(back_populates="seller")

@@ -322,17 +322,41 @@ def start_chat(body: StartChatRequest, user: User = Depends(get_current_user), s
     return {"chat_id": chat.id}
 
 @app.get("/chats/my")
-def get_my_chats(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    chats = session.exec(select(Chat).where(
-        (Chat.buyer_id == user.id) | (Chat.seller_id == user.id)
-    ).order_by(Chat.created_at.desc())).all()
+def get_my_chats(
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(get_current_user)
+):
+    chats = session.exec(
+        select(Chat).where(
+            (Chat.buyer_id == current_user.id) | (Chat.seller_id == current_user.id)
+        ).order_by(Chat.created_at.desc())
+    ).all()
     
-    for c in chats:
-        session.refresh(c.product)
-        session.refresh(c.buyer)
-        session.refresh(c.seller)
+    # ✅ FORZAR CARGA DE RELACIONES
+    for chat in chats:
+        # Cargar producto
+        if chat.product_id:
+            try:
+                session.refresh(chat, ["product"])
+            except:
+                pass
+        
+        # Cargar comprador
+        if chat.buyer_id:
+            try:
+                session.refresh(chat, ["buyer"])
+            except:
+                pass
+        
+        # Cargar vendedor
+        if chat.seller_id:
+            try:
+                session.refresh(chat, ["seller"])
+            except:
+                pass
     
     return chats
+
 
 @app.get("/chats/{chat_id}/messages")
 def get_messages(chat_id: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):

@@ -187,7 +187,16 @@ def get_my_purchases(user: User = Depends(get_current_user), session: Session = 
 # -------------------------
 @app.get("/products")
 def list_products(session: Session = Depends(get_session)):
-    return session.exec(select(Product).order_by(Product.created_at.desc())).all()
+    products = session.exec(select(Product).order_by(Product.created_at.desc())).all()
+    
+    # ✅ Forzar carga del vendedor para cada producto
+    for p in products:
+        if p.seller_id:
+            session.refresh(p.seller)
+    
+    return products
+
+
 
 @app.get("/products/{pid}")
 def product_detail(pid: int, session: Session = Depends(get_session)):

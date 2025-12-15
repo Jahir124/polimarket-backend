@@ -469,6 +469,181 @@ def update_order_status(
     
     return {"status": "updated"}
 
+
+# -------------------------
+# CARGA MASIVA DE PRODUCTOS
+# -------------------------
+import pandas as pd
+from io import BytesIO
+
+@app.post("/products/bulk-upload")
+async def bulk_upload_products(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Subir múltiples productos desde archivo Excel (.xlsx)
+    
+    Formato esperado del Excel:
+    | title | description | price | category | image_url |
+    |-------|-------------|-------|----------|-----------|
+    """
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(400, "El archivo debe ser Excel (.xlsx o .xls)")
+    
+    try:
+        # Leer archivo Excel
+        contents = await file.read()
+        df = pd.read_excel(BytesIO(contents))
+        
+        # Validar columnas requeridas
+        required_columns = ['title', 'description', 'price', 'category', 'image_url']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            raise HTTPException(
+                400, 
+                f"Faltan columnas requeridas: {', '.join(missing_columns)}"
+            )
+        
+        products_created = []
+        errors = []
+        
+        # Procesar cada fila
+        for index, row in df.iterrows():
+            row_num = index + 2  # +2 porque Excel empieza en 1 y hay header
+            
+            try:
+                # Validaciones
+                if pd.isna(row['title']) or not row['title'].strip():
+                    errors.append(f"Fila {row_num}: Título vacío")
+                    continue
+                
+                if pd.isna(row['price']) or float(row['price']) <= 0:
+                    errors.append(f"Fila {row_num}: Precio inválido")
+                    continue
+                
+                # Validar categoría
+                category_value = str(row['category']).lower()
+                valid_categories = ['food', 'electronics', 'study', 'other']
+                if category_value not in valid_categories:
+                    errors.append(
+                        f"Fila {row_num}: Categoría '{category_value}' inválida. "
+                        f"Usa: {', '.join(valid_categories)}"
+                    )
+                    continue
+                
+                # Crear producto
+                product = Product(
+                    title=str(row['title']).strip(),
+                    description=str(row['description']).strip() if not pd.isna(row['description']) else "",
+                    price=float(row['price']),
+                    category=Category(category_value),
+                    image_url=str(row['image_url']).strip() if not pd.isna(row['image_url']) else None,
+                    seller_id=current_user.id
+                )
+                
+                session.add(product)
+                products_created.append({
+                    'row': row_num,
+                    'title': product.title
+                })
+                
+            except Exception as e:
+                errors.append(f"Fila {row_num}: {str(e)}")
+                continue
+        
+        # Guardar todo en la base de datos
+        session.commit()
+        
+        return {
+            "success": True,
+            "products_created": len(products_created),
+            "products_details": products_created,
+            "errors": errors,
+            "total_rows": len(df)
+        }
+        
+    except Exception as e:
+        raise HTTPException(500, f"Error procesando archivo: {str(e)}")
+
+
+@app.get("/products/bulk-upload/template")
+async def download_template():
+    """
+    Descargar plantilla Excel de ejemplo
+    """
+    from fastapi.responses import StreamingResponse
+    
+    # Crear DataFrame con datos de ejemplo
+    sample_data = {
+        'title': [
+            'Calculadora Científica',
+            'Apuntes de Cálculo',
+            'Empanada de Queso'
+        ],
+        'description': [
+            'Casio FX-991, casi nueva',
+            'Apuntes completos del semestre',
+            'Empanada recién hecha'
+        ],
+        'price': [15.00, 3.50, 1.00],
+        'category': ['electronics', 'study', 'food'],
+        'image_url': [
+            'https://ejemplo.com/calculadora.jpg',
+            'https://ejemplo.com/apuntes.jpg',
+            'https://ejemplo.com/empanada.jpg'
+        ]
+    }
+    
+    df = pd.DataFrame(sample_data)
+    
+    # Crear archivo Excel en memoria
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Productos')
+        
+        # Agregar hoja con instrucciones
+        instructions = pd.DataFrame({
+            'INSTRUCCIONES': [
+                '1. Llena cada columna con los datos de tus productos',
+                '2. title: Nombre del producto (obligatorio)',
+                '3. description: Descripción detallada',
+                '4. price: Precio en dólares (número positivo)',
+                '5. category: Debe ser: food, electronics, study, o other',
+                '6. image_url: URL de la imagen (debe ser pública)',
+                '',
+                'CATEGORÍAS VÁLIDAS:',
+                '- food: Comida y bebidas',
+                '- electronics: Electrónicos y gadgets',
+                '- study: Útiles y material de estudio',
+                '- other: Otros productos',
+                '',
+                'IMPORTANTE:',
+                '- No borres las columnas',
+                '- Usa URLs públicas para las imágenes',
+                '- El precio debe ser un número (ej: 15.50)',
+                '- Elimina las filas de ejemplo antes de subir'
+            ]
+        })
+        instructions.to_excel(writer, index=False, sheet_name='INSTRUCCIONES')
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": "attachment; filename=plantilla_productos_polimarket.xlsx"
+        }
+    )
+
+
+
+
+
 # -------------------------
 # WEBSOCKETS
 # -------------------------

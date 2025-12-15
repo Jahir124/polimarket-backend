@@ -252,6 +252,27 @@ def update_product(
     session.commit()
     session.refresh(product)
     return product
+@app.delete("/products/{pid}")
+def delete_product(
+    pid: int,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Eliminar un producto (solo el dueño puede hacerlo)"""
+    product = session.get(Product, pid)
+    if not product:
+        raise HTTPException(404, "Producto no encontrado")
+    
+    # Verificar que el usuario sea el dueño
+    if product.seller_id != user.id:
+        raise HTTPException(403, "No eres el dueño de este producto")
+    
+    # Eliminar producto
+    session.delete(product)
+    session.commit()
+    
+    return {"status": "deleted", "product_id": pid}
+
 
 @app.post("/products/{pid}/favorite")
 def toggle_favorite(pid: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
